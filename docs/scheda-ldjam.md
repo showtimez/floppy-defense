@@ -39,11 +39,13 @@ i famigerati MELISSA.DOC e ILOVEYOU.VBS. Se l'integrità della CPU arriva a 0%�
 
 ## Note Compo
 All content created during the 48 hours, generated procedurally in code. Tools/libraries: three.js, Vite, Web Audio API.
-Source code: <link repo GitHub>
+Source code: https://github.com/N-THEM-Studio/floppy-defense
 
 ## Checklist pubblicazione
 - [ ] `npm run zip` → caricare `floppy-defense-web.zip` su itch.io (Kind: HTML, "This file will be played in the browser")
 - [ ] Embed 960x600, "Fullscreen button" attivo, "Mobile friendly" (landscape)
-- [ ] Repo GitHub pubblico con sorgenti (obbligatorio per il Compo)
-- [ ] Screenshot 3-5 (menu, gameplay, boss, BSOD, vittoria) + cover 630x500
+- [x] Repo GitHub pubblico con sorgenti (obbligatorio per il Compo): https://github.com/N-THEM-Studio/floppy-defense
+  (link da usare nella pagina; copia identica anche su https://github.com/showtimez/floppy-defense)
+- [ ] Screenshot 3-5 (menu, gameplay, boss, BSOD, vittoria)
+- [x] Cover 630x500: `docs/media/cover-630x500.png` (rigenerabile con `node tools/cover.mjs`)
 - [ ] Pagina ldjam: link web build + sorgenti, categorie, descrizione EN
