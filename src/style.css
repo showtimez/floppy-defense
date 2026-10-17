@@ -1,0 +1,25 @@
+/* Base layout only. UI styling lives in src/ui/ui.css (owned by the UI module). */
+:root {
+  --phosphor: #39ff6a;
+  --phosphor-dim: #1f9e44;
+  --amber: #ffb000;
+  --danger: #ff3b30;
+  --beige: #d8cfb4;
+  --bsod: #0000aa;
+  --font-dos: "Perfect DOS VGA 437", "Px437 IBM VGA8", "Consolas", "Lucida Console", "Courier New", monospace;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  background: #000; color: var(--phosphor);
+  overflow: hidden; overscroll-behavior: none;
+  font-family: var(--font-dos);
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+#game { position: fixed; inset: 0; overflow: hidden; background: #000; }
+#game > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+#ui { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+/* Children of #ui are click-through by default; interactive elements must set pointer-events:auto (class .ui-hit). */
+#ui .ui-hit { pointer-events: auto; }

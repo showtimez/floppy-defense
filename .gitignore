@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.zip
+tests/out/
+.DS_Store
+Thumbs.db
+*.log
+docs/harvest/
+.claude/
