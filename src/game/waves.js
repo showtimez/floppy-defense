@@ -6,11 +6,12 @@ import { ENEMIES, effectiveHp } from '../data/enemies.js';
 // Endless tuning (copied per waves instance as waves.tuning so balance probes can try values at runtime).
 const ENDLESS = {
   growth: 1.27,      // hp growth per wave past the campaign table (the board is maxed by then: this sets the wall)
-  base: 6.4,         // continue-from-victory: wave 10+k = base x growth^k (campaign waves 8-9 are x6.85-7.2)
+  base: 14.5,        // continue-from-victory: wave 20+k = base x growth^k (campaign waves 18-19 are x13-14.2)
   freshGrowth: 1.25, // fresh run (ENDLESS from the menu): waves 1-10 at freshGrowth^(n-1), then x growth per wave
   bossHp: 0.25,      // boss group multiplier (campaign ILOVEYOU: x3.75 wave * x0.62 group); never below the base hp
 };
 const Y2K_WAVE = 20;             // waves 11-19 count the months down to the millennium bug, then 'Y2K.BUG'
+const FRESH_RAMP = 10;           // a fresh endless run ramps at freshGrowth for its first 10 waves, then at growth
 
 // Endless wave names: 'ENDLESS 07' (fresh run, waves 1-10), '04/1999' ... '12/1999', 'Y2K.BUG', 'Y2K+1', ...
 function endlessName(n, tableLen) {
@@ -83,7 +84,7 @@ export function createWaves(ctx) {
 
   // ---------------------------------------------------------------------------------------------
   // Endless generator: deterministic per wave number (info(n) and start(n) agree).
-  //  continue-from-victory (game.endlessFresh false): waves > 10 only, k = n - 10;
+  //  continue-from-victory (game.endlessFresh false): waves past the campaign table only, k = n - table.length;
   //  fresh run from the menu (game.endlessFresh true): every wave, k = n, hp freshGrowth^(n-1) up to wave 10.
   // ---------------------------------------------------------------------------------------------
   function generate(n, fresh = false) {
@@ -101,6 +102,14 @@ export function createWaves(ctx) {
       { type: 'worm', make: () => ({ type: 'worm', count: round(16 * cnt), interval: 0.2, path: pick([0, 1]) }) },
       { type: 'macro', make: () => ({ type: 'macro', count: round(3 * cnt), interval: 1.2, path: 'both' }) },
     ];
+    // the 1999 viruses join from wave 11 of a fresh run (always when continuing past the campaign)
+    if (!fresh || n > FRESH_RAMP) {
+      patterns.push(
+        { type: 'michelangelo', make: () => ({ type: 'michelangelo', count: round(4 * cnt + r() * 3), interval: 0.9 + r() * 0.4, path: pick(['both', 'alt']) }) },
+        { type: 'happy99', make: () => ({ type: 'happy99', count: round(5 * cnt + r() * 3), interval: 0.7 + r() * 0.3, path: pick(['both', 'alt']) }) },
+        { type: 'cih', make: () => ({ type: 'cih', count: round(2 * cnt + r() * 2), interval: 1.8 + r() * 0.6, path: pick(['alt', 'both']) }) },
+      );
+    }
     // fresh runs re-introduce the viruses like the campaign: worms, then trojans (wave 3), then macros (wave 4)
     const allowed = !fresh || n >= 4 ? null : (n === 3 ? ['worm', 'trojan'] : ['worm']);
     const pool = allowed ? patterns.filter((p) => allowed.includes(p.type)) : patterns;
@@ -124,7 +133,7 @@ export function createWaves(ctx) {
     }
     const T = tuning;
     const hpMul = fresh
-      ? Math.pow(T.freshGrowth, Math.min(n, table.length) - 1) * Math.pow(T.growth, Math.max(0, n - table.length))
+      ? Math.pow(T.freshGrowth, Math.min(n, FRESH_RAMP) - 1) * Math.pow(T.growth, Math.max(0, n - FRESH_RAMP))
       : T.base * Math.pow(T.growth, past);
     if (n % 5 === 0) {
       const boss = n % 10 === 0 ? 'boss_iloveyou' : 'boss_melissa';
@@ -135,7 +144,7 @@ export function createWaves(ctx) {
       if (n >= Y2K_WAVE) groups.push({ type: boss === 'boss_melissa' ? 'boss_iloveyou' : 'boss_melissa', count: 1, interval: 1, delay: 24, path: 1 - p, hpMul: bossHp });
     }
     const def = normWave({
-      name: endlessName(n, table.length),
+      name: endlessName(n, FRESH_RAMP),
       bonus: Math.min(120, 60 + 3 * k),
       hpMul,
       rewardMul: Math.min(2, 1 + 0.03 * k),

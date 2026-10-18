@@ -125,7 +125,8 @@ export function createEnemies(ctx) {
       cpuDamage: def.cpuDamage,
       isBoss: !!def.boss,
       mesh: new THREE.Object3D(),
-      color: def.color,
+      color: def.dormant && def.dormant.color != null ? def.dormant.color : def.color,
+      dormant: !!def.dormant, // MICHELANGELO: asleep (slow, grey) until hit or past def.dormant.wakeAt of its path
       // extras
       offset,
       hpMul,
@@ -164,7 +165,10 @@ export function createEnemies(ctx) {
     dying.push(e);
   }
 
-  function splitOff(parent, type, count, spread = 0.3) {
+  // Children inherit the parent's multipliers; `baseReward` (split.reward / splitAt.reward) overrides the child's KB.
+  function splitOff(parent, type, count, spread = 0.3, baseReward = null) {
+    const cdef = ENEMIES[type];
+    const rewardMul = baseReward != null && cdef && cdef.reward > 0 ? (baseReward / cdef.reward) * parent.rewardMul : parent.rewardMul;
     const children = [];
     const v = parent.vis;
     const from = { x: v ? v.dx : parent.pos.x, z: v ? v.dz : parent.pos.z };
@@ -175,7 +179,7 @@ export function createEnemies(ctx) {
         offset: parent.offset + f * 0.2 + (rand() - 0.5) * 0.08,
         hpMul: parent.hpMul,
         speedMul: parent.speedMul,
-        rewardMul: parent.rewardMul,
+        rewardMul,
         hopFrom: from,
       });
       if (c) children.push(c);
@@ -192,7 +196,7 @@ export function createEnemies(ctx) {
     events.emit('enemy:killed', { enemy: e, reward: e.reward, by });
     if (e.isBoss) events.emit('boss:killed', { enemy: e });
     const sp = e.def.split;
-    if (sp && ENEMIES[sp.into]) splitOff(e, sp.into, sp.count, sp.spread);
+    if (sp && ENEMIES[sp.into]) splitOff(e, sp.into, sp.count, sp.spread, sp.reward);
   }
 
   // CPU damage on leak. Bosses with def.leakMin scale it by their remaining hp (every hit on a boss still counts
@@ -216,6 +220,16 @@ export function createEnemies(ctx) {
     if (!e || !e.alive) return false;
     let amt = Number(amount);
     if (!(amt > 0)) return false;
+    // flat armour (CIH): removed from every hit before the matchup multiplier, never below 1 per hit
+    const armor = e.def.armor;
+    if (armor > 0 && amt > 1) {
+      amt = Math.max(1, amt - armor);
+      if (!((e.vsShown | 0) & 4)) {
+        e.vsShown = (e.vsShown | 0) | 4;
+        _txt.set(e.pos.x, e.pos.y + 1.05, e.pos.z);
+        try { ctx.fx?.text?.(_txt, 'ARMOR', '#c8ff2a', VS_TEXT); } catch (err) { /* optional */ }
+      }
+    }
     // type matchups (e.g. the wooden TROJAN shrugs off scans but burns well): def.vs[towerType] multiplier
     const vs = e.def.vs;
     if (vs && sourceTower && vs[sourceTower.type] > 0) {
@@ -243,8 +257,26 @@ export function createEnemies(ctx) {
       kill(e, sourceTower);
       return true;
     }
+    if (e.dormant) wake(e);
     if (e.def.splitAt) checkSplitAt(e);
     return false;
+  }
+
+  // MICHELANGELO: March 6th. Speed jumps ×dormant.speedMul, real colour, a flash ring and a "WAKE UP!" tag.
+  function wake(e) {
+    const dm = e.def.dormant;
+    if (!e.dormant || !dm) return;
+    e.dormant = false;
+    e.baseSpeed *= dm.speedMul > 0 ? dm.speedMul : 1;
+    e.speed = e.baseSpeed * e.slowMul;
+    e.color = e.def.color;
+    if (e.vis) { e.vis.pulse = 1.6; e.vis.punch = 1; e.vis.stage = 1; }
+    _txt.set(e.pos.x, e.pos.y + 0.9, e.pos.z);
+    try {
+      ctx.fx?.ring?.(e.pos, 1.3, e.def.color, { life: 0.45, width: 0.14 });
+      ctx.fx?.text?.(_txt, 'MAR 6!', '#d9a6ff', VS_TEXT);
+    } catch (err) { /* optional */ }
+    events.emit('enemy:wake', { enemy: e });
   }
 
   // MELISSA: sheds macros when crossing hp thresholds.
@@ -253,7 +285,7 @@ export function createEnemies(ctx) {
     while (e.alive && e.splitStage < sa.thresholds.length && e.hp / e.maxHp <= sa.thresholds[e.splitStage]) {
       e.splitStage++;
       if (e.vis) { e.vis.stage = e.splitStage; e.vis.pulse = 1.5; }
-      splitOff(e, sa.type, sa.count, sa.spread);
+      splitOff(e, sa.type, sa.count, sa.spread, sa.reward);
       try { ctx.view?.glitch?.(0.45, 0.25); } catch (err) { /* optional */ }
     }
   }
@@ -413,10 +445,11 @@ export function createEnemies(ctx) {
         e.slowTime -= dt;
         if (e.slowTime <= 0) { e.slowTime = 0; e.slowMul = 1; }
       }
+      const L = pathLen(e.pathIndex);
+      if (e.dormant && L > 0 && e.dist >= L * (e.def.dormant.wakeAt ?? 0.45)) wake(e);
       e.speed = e.baseSpeed * e.slowMul;
       const mv = e.vis.hopT > 0 ? 0.35 : 1; // split children land before running
       e.dist += e.speed * mv * dt;
-      const L = pathLen(e.pathIndex);
       if (L > 0 && e.dist >= L) {
         leak(e);
         if (gen !== g0) return;

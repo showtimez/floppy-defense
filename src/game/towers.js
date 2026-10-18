@@ -9,6 +9,7 @@ const OK = Object.freeze({ ok: true, reason: null });
 const NO_INVALID = Object.freeze({ ok: false, reason: 'invalid' });
 const NO_OCCUPIED = Object.freeze({ ok: false, reason: 'occupied' });
 const NO_KB = Object.freeze({ ok: false, reason: 'kb' });
+const NO_LOCKED = Object.freeze({ ok: false, reason: 'locked' });
 
 const RETARGET_EVERY = 0.12;
 const AIM_TOLERANCE = 0.45;   // radians: ANTIVIRUS fires once roughly facing its target
@@ -66,6 +67,7 @@ export function createTowers(ctx) {
   const SHOT = {
     kind: 'bolt', from: new THREE.Vector3(), target: null, targetPos: null, speed: 14, damage: 0, splash: 0,
     color: 0xffffff, source: null, onHit: null, pierce: 0, slow: 0, slowTime: 0, burnDps: 0, burnTime: 0,
+    fxColor: null, ringMode: 0,
   };
   const FIRE_EVT = { tower: null, target: null };
   const SMOKE_OPTS = { color: 0xd9d9d9, count: 2 };
@@ -117,9 +119,16 @@ export function createTowers(ctx) {
   }
 
   // ---------------------------------------------------------------- build / upgrade / sell
+  // Late floppies (def.unlockWave) open up once the previous wave has been reached (prep phase of unlockWave).
+  function isLocked(type) {
+    const w = TOWERS[type]?.unlockWave | 0;
+    return w > 1 && (ctx.game?.wave | 0) < w - 1;
+  }
+
   function canPlace(type, slot) {
     const def = getDef(type, 1);
     if (!def || !slot || !slot.pos) return NO_INVALID;
+    if (isLocked(type)) return NO_LOCKED;
     if (slot.tower) return NO_OCCUPIED;
     if (!canAfford(def.cost)) return NO_KB;
     return OK;
@@ -216,6 +225,8 @@ export function createTowers(ctx) {
     SHOT.burnDps = 0;
     SHOT.burnTime = 0;
     SHOT.splash = 0;
+    SHOT.fxColor = null;
+    SHOT.ringMode = 0;
     if (def.attack === 'bolt') {
       SHOT.kind = 'bolt';
       models.muzzle(vis, SHOT.from);
@@ -231,6 +242,11 @@ export function createTowers(ctx) {
       SHOT.burnDps = def.burnDps || 0;
       SHOT.burnTime = def.burnTime || 0;
       SHOT.color = t.level >= 3 ? 0xfff0c8 : 0xffffff;
+      if (def.burstColor != null) {          // FORMAT: purple wipe instead of fire
+        SHOT.color = 0xffffff;
+        SHOT.fxColor = def.burstColor;
+        SHOT.ringMode = 0.25;
+      }
       ctx.projectiles?.fire?.(SHOT);
     } else {
       SHOT.kind = 'pulse';
@@ -389,6 +405,7 @@ export function createTowers(ctx) {
     targetModes: TARGET_MODES,
     maxLevel: MAX_LEVEL,
     getDef,
+    isLocked,
     canPlace,
     place,
     upgradeCost,

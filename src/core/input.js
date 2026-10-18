@@ -10,7 +10,7 @@ const TAP_TIME = 500;       // ms max press duration for a tap
 const SNAP_MOUSE = 0.55;    // world units: fallback slot snapping when map.pick misses (mouse)
 const SNAP_TOUCH = 0.95;    // fat-finger tolerance on touch / pen
 const TOWER_PICK_HEIGHTS = [0, 0.45, 0.9]; // tall floppies are pickable along their body, not only at the base
-const QUICKBUILD = { 1: 'antivirus', 2: 'firewall', 3: 'defrag' };
+const QUICKBUILD = { 1: 'antivirus', 2: 'firewall', 3: 'defrag', 4: 'scandisk', 5: 'format' };
 const TARGETING = ['first', 'last', 'strong', 'close'];
 
 const inPlayPhase = (p) => p === 'prep' || p === 'wave';
@@ -315,7 +315,9 @@ export function createInput(ctx) {
         break;
       case '1':
       case '2':
-      case '3': {
+      case '3':
+      case '4':
+      case '5': {
         if (!play) { handled = false; break; }
         if (e.repeat) break;
         const slot = hoveredSlot && !hoveredSlot.tower ? hoveredSlot : null;

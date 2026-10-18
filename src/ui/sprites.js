@@ -109,6 +109,62 @@ const SPRITES = {
     '...RR..RR...',
     '..RR....RR..',
   ],
+  virus: [
+    '.....Y......',
+    '..Y..b..Y...',
+    '...b.b.b....',
+    '..bBBBBBb...',
+    'YbBHBBBBBbY.',
+    '..BBBBBBB...',
+    '..BRBBBRB...',
+    'YbBBBBBBBbY.',
+    '..bBKKKBb...',
+    '...b.b.b....',
+    '..Y..b..Y...',
+    '.....Y......',
+  ],
+  rocket: [
+    '..........Cy',
+    '.........RRy',
+    '........RBRC',
+    '.......BBRR.',
+    '......BRBB..',
+    '.....BBRB...',
+    '....BCBB....',
+    '...RBBB.....',
+    '..y.RB......',
+    '.C.y.d......',
+    'R.y.d.......',
+    '...d........',
+  ],
+  bios: [
+    '.M.M.M.M.M..',
+    'KKKKKKKKKKK.',
+    'KkkkkkkkkkK.',
+    'KkkBBkBBkkK.',
+    'KkkBBkBBkkK.',
+    'KkkkkHkkkkK.',
+    'KkkkkkkkkkK.',
+    'KkkkBBBkkkK.',
+    'KkkkkBkkkkK.',
+    'KKKKKKKKKKK.',
+    '.M.M.M.M.M..',
+    '............',
+  ],
+  clock: [
+    '.RR......RR.',
+    'RRR.MMMM.RRR',
+    '.KKKKKKKKKK.',
+    'KbbbbbbbbbbK',
+    'KbKKKKKKKKbK',
+    'KbKBBKKBBKbK',
+    'KbKBKHHKBKbK',
+    'KbKBBKKBBKbK',
+    'KbKKKKKKKKbK',
+    'KbbbbbbbbbbK',
+    '.KKKKKKKKKK.',
+    '.m........m.',
+  ],
   chip: [
     '.M.M.M.M.M..',
     'KKKKKKKKKKK.',
@@ -127,7 +183,7 @@ const SPRITES = {
 
 const FIXED = {
   M: '#b9c0c6', m: '#6b7178', K: '#101214', k: '#2a2d31', W: '#f1efe4', L: '#8f9aab',
-  E: '#ffffff', P: '#000000', d: '#9b9b92', R: '#e8402f',
+  E: '#ffffff', P: '#000000', d: '#9b9b92', R: '#e8402f', Y: '#ffe14a', C: '#38f0ff', y: '#fff3a0',
 };
 
 const cache = new Map();
@@ -174,6 +230,10 @@ export function enemyLook(type) {
     case 'macro_mini': return { sprite: 'macro', color: PALETTE.macro };
     case 'boss_melissa': return { sprite: 'macro', color: PALETTE.boss };
     case 'boss_iloveyou': return { sprite: 'heart', color: 0xff4fa3 };
+    case 'michelangelo': return { sprite: 'virus', color: 0xa64dff };
+    case 'happy99': return { sprite: 'rocket', color: 0xffb000 };
+    case 'cih': return { sprite: 'bios', color: 0xb4ff1e };
+    case 'boss_y2k': return { sprite: 'clock', color: 0xff5a1f };
     default: return { sprite: 'chip', color: PALETTE.phosphor };
   }
 }

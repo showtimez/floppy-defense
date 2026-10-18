@@ -118,7 +118,7 @@ export function createMenu(U) {
   // --- sub pages
   function buildHowto() {
     const p = (k) => h('p', { class: 'howto-p' }, h('span', { class: 'howto-bullet' }, '\u25a0 '), t(k));
-    const towers = ['antivirus', 'firewall', 'defrag'].map((type) => {
+    const towers = ['antivirus', 'firewall', 'defrag', 'scandisk', 'format'].map((type) => {
       const look = towerLook(type);
       return h('div', { class: 'howto-unit' }, spriteImg('floppy', look.color, 'spr spr-md'),
         h('div', null, h('div', { class: 'howto-unit-name', style: `color:${look.light}` }, `${t('tower.' + type)} `,

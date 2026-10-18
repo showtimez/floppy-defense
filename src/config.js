@@ -4,7 +4,7 @@
 export const GAME = {
   TITLE: 'FLOPPY DEFENSE',
   VERSION: '1.0',
-  TOTAL_WAVES: 10,          // campaign length; bosses on waves 5 and 10
+  TOTAL_WAVES: 20,          // campaign length; bosses on waves 5, 10, 15 and 20 (waves 11-20: the 1999 campaign)
   START_KB: 200,            // starting memory
   CPU_MAX: 100,             // CPU integrity %
   PREP_TIME: 15,            // seconds of preparation between waves

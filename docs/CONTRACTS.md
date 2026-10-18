@@ -437,6 +437,12 @@ Cover art: `node tools/cover.mjs <baseUrl>` renders photo mode on the real GPU w
     fresh runs (menu) also generate waves 1-10 with hp ×`freshGrowth` (1.25)^(n-1); boss every 5 waves with group hp
     ×`bossHp` (0.25, never below the boss's base hp), both bosses from wave 20 (`Y2K.BUG`) on. Bots: a fresh endless run
     dies around waves 16-18, a continued one around 17-19.
+- **1999 campaign (waves 11-20, `GAME.TOTAL_WAVES` = 20)**: SCANDISK (long-range heavy bolt, pierce at v3) and FORMAT C:
+  (slow purple area blast) have `unlockWave: 11` (`towers.isLocked`, `canPlace` reason `'locked'`; hotkeys 4/5). New viruses:
+  MICHELANGELO (`dormant`: slow until first hit or 45 % of the path, then ×3.4 speed, `enemy:wake`), HAPPY99 (splits into 3
+  worms), CIH (`armor` 5: flat reduction per hit before `vs`), boss Y2K.BUG (wave 20, splitAt drops CIH, summons HAPPY99).
+  Wave hp ×6.75 … ×12.5 for waves 11-19, MAILBOMB (15) brings MELISSA + ILOVEYOU, Y2K.BUG group ×0.36. Bots: normal wins
+  3/3 seeds at 36-61 % CPU with wave 20 the hardest. Endless continues from wave 21 (`ENDLESS.base` 14.5).
 - **Heights**: board y=0, traces y≈0.01, slots/sockets top ≈ 0.15, floppy turret top ≈ 1.0, enemies centre y≈0.35 (bosses ≈0.8),
   projectiles y≈0.6, floating text y≈1.2.
 - **Selection/hover colours**: hover = phosphor green outline, selected = bright phosphor + animated brackets, invalid = red.

@@ -406,6 +406,18 @@ function doodle(g, kind, x, y, ink) {
   } else if (kind === 'flame') {
     g.moveTo(0, 20); g.quadraticCurveTo(-16, 10, -8, -4); g.quadraticCurveTo(-6, 4, -2, 4); g.quadraticCurveTo(-6, -10, 4, -20);
     g.quadraticCurveTo(4, -6, 12, -2); g.quadraticCurveTo(16, 12, 0, 20);
+  } else if (kind === 'target') {
+    // crosshair (SCANDISK surface scan)
+    g.arc(0, 0, 15, 0, Math.PI * 2);
+    g.moveTo(6, 0); g.arc(0, 0, 6, 0, Math.PI * 2);
+    g.moveTo(-21, 0); g.lineTo(-9, 0); g.moveTo(9, 0); g.lineTo(21, 0);
+    g.moveTo(0, -21); g.lineTo(0, -9); g.moveTo(0, 9); g.lineTo(0, 21);
+  } else if (kind === 'bomb') {
+    // cartoon bomb with a lit fuse (FORMAT C:)
+    g.arc(-3, 5, 13, 0, Math.PI * 2);
+    g.moveTo(5, -5); g.lineTo(9, -10);
+    g.moveTo(9, -10); g.quadraticCurveTo(13, -18, 19, -14);
+    g.moveTo(19, -20); g.lineTo(19, -24); g.moveTo(23, -16); g.lineTo(26, -17); g.moveTo(22, -21); g.lineTo(25, -24);
   } else {
     for (let r = 0; r < 2; r++) for (let c = 0; c < 3; c++) g.rect(-16 + c * 11, -10 + r * 11, 9, 9);
   }
@@ -1038,7 +1050,7 @@ export function createTowerModels(ctx) {
   }
 
   // ---------------------------------------------------------------- shader warm-up (no hitch on the first build/upgrade)
-  // Every material a floppy can ever use (all 9 labels, the backup disk, v3 antenna/rings, outlines) exists from the
+  // Every material a floppy can ever use (all 15 labels, the backup disk, v3 antenna/rings, outlines) exists from the
   // start and is attached to the scene. Until the scene has been rendered once for real, every part stays VISIBLE with
   // zero instances (no draws, no fill cost): the global renderer warm-up compiles them with the rest of the scene, and
   // the first real frame compiles any variant it missed (post render target, shadow depth pass, final light setup)

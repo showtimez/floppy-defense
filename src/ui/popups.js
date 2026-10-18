@@ -1,14 +1,14 @@
-// BUILD popup (three floppy cards anchored at a free slot) and TOWER panel (stats, targeting,
+// BUILD popup (five floppy cards anchored at a free slot) and TOWER panel (stats, targeting,
 // upgrade, sell) anchored at a placed floppy. Both follow their anchor via view.worldToScreen.
 import { t } from '../core/i18n.js';
 import { h, setText, show, icon, clamp, fmtNum } from './dom.js';
 import { spriteImg } from './sprites.js';
-import { TOWER_TYPES, towerDef, towerCost, towerLook, towerStats, fmtStat } from './towerinfo.js';
+import { TOWER_TYPES, towerDef, towerCost, towerLook, towerStats, fmtStat, towerLocked, towerUnlockWave } from './towerinfo.js';
 
 const MODES = ['first', 'last', 'strong', 'close'];
-const NO_TARGETING = new Set(['firewall', 'defrag']);
+const NO_TARGETING = new Set(['firewall', 'defrag', 'format']);
 // Matchup line on each build card (stays visible on phones, where the description is hidden).
-const VS_CLASS = { antivirus: 'is-bad', firewall: 'is-good', defrag: 'is-slow' };
+const VS_CLASS = { antivirus: 'is-bad', firewall: 'is-good', defrag: 'is-slow', scandisk: 'is-good', format: 'is-good' };
 const DEFAULT_PREVIEW = 'antivirus';
 const RING_N = 12; // samples of the range circle used to find its on-screen bounding box
 
@@ -113,6 +113,7 @@ export function createPopups(U) {
   let sizeDirty = true;
   let lastKills = -1;
   let lastKb = -1;
+  let lastWave = -1;
   let lastX = -1e9, lastY = -1e9;
   let lastBoss = false;
   let previewing = null;
@@ -174,13 +175,16 @@ export function createPopups(U) {
     setText(buildTitle, t('build.title'));
     const kb = game.kb;
     lastKb = kb;
+    lastWave = game.wave;
     for (const c of cards) {
       const cost = towerCost(U, c.type);
+      const locked = towerLocked(U, c.type);
       setText(c.name, t('tower.' + c.type));
       setText(c.cost, `${cost}KB`);
       setText(c.desc, t(`tower.${c.type}.desc`));
-      setText(c.vs, t(`card.vs.${c.type}`));
-      c.card.classList.toggle('is-poor', kb < cost);
+      setText(c.vs, locked ? t('card.locked', { n: towerUnlockWave(U, c.type) }) : t(`card.vs.${c.type}`));
+      c.card.classList.toggle('is-locked', locked);
+      c.card.classList.toggle('is-poor', !locked && kb < cost);
     }
   }
 
@@ -226,11 +230,11 @@ export function createPopups(U) {
     if (curDef && curDef.special) {
       show(tpSpecial, true);
       tpSpecial.classList.remove('is-next');
-      setText(tpSpecial, `\u263c ${t('special.' + curDef.special)}`);
+      setText(tpSpecial, `\u263c ${t('special.' + curDef.special, { n: curDef.pierce | 0, s: (curDef.pierce | 0) > 1 ? 'ES' : '' })}`);
     } else if (nextDef && nextDef.special) {
       show(tpSpecial, true);
       tpSpecial.classList.add('is-next');
-      setText(tpSpecial, t('special.unlock', { v: `v${level + 1}.0`, what: t('special.' + nextDef.special) }));
+      setText(tpSpecial, t('special.unlock', { v: `v${level + 1}.0`, what: t('special.' + nextDef.special, { n: nextDef.pierce | 0, s: (nextDef.pierce | 0) > 1 ? 'ES' : '' }) }));
     } else show(tpSpecial, false);
     lastKills = tower.kills || 0;
     setText(stKills.lbl, t('panel.kills'));
@@ -353,7 +357,7 @@ export function createPopups(U) {
 
   function update() {
     if (!buildSlot && !tower) return;
-    if (game.kb !== lastKb) {
+    if (game.kb !== lastKb || game.wave !== lastWave) {
       if (buildSlot) refreshBuild();
       else refreshTower();
     }

@@ -27,6 +27,7 @@ const PRIM = {
   cyl6: new THREE.CylinderGeometry(1, 1, 1, 6),
   cyl8: new THREE.CylinderGeometry(1, 1, 1, 8),
   cone4: new THREE.ConeGeometry(1, 1, 4),
+  cone8: new THREE.ConeGeometry(1, 1, 8),
   octa: new THREE.OctahedronGeometry(1, 0),
 };
 
@@ -111,7 +112,170 @@ const C = {
   melissaEye: 0xff2040,
   heart: 0xff3c8e, heartSide: 0xc8145e, seal: 0xff1744, envelope: 0xf6ead2, envelopeFlap: 0xe2cfa6,
   ice: 0xbff2ff,
+  // MICHELANGELO (asleep: grey stone / awake: violet), HAPPY99 (firework rocket), CIH (BIOS chip), Y2K (alarm clock)
+  stone: 0xa9aeb8, stoneDark: 0x6d727c, stoneTip: 0xdfe4ec, zz: 0xbfd8ff,
+  mich: 0xa64dff, michDark: 0x6a1fc4, michTip: 0xffe14a,
+  rocket: 0xffb000, rocketRed: 0xff3040, rocketCyan: 0x30f0ff, spark: 0xfff3a0, stick: 0x8a5a2a,
+  chip: 0x1c1e22, chipEdge: 0x34373d, hazard: 0xc8ff2a,
+  clock: 0x1d1517, clockRim: 0xff7a1f, bell: 0xd02a20,
 };
+
+// Piece oriented so its +Y axis points along unit vector `d` (spikes, cones).
+const _up = new THREE.Vector3(0, 1, 0);
+const _dv = new THREE.Vector3();
+function pieceDir(src, color, emis, p, d, s) {
+  const g = src.index ? src.toNonIndexed() : src.clone();
+  for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+  g.clearGroups();
+  _q.setFromUnitVectors(_up, _dv.set(d[0], d[1], d[2]).normalize());
+  _m.compose(_p.set(p[0], p[1], p[2]), _q, _s.set(s[0], s[1], s[2]));
+  g.applyMatrix4(_m);
+  paint(g, color, emis);
+  return g;
+}
+
+// Spiky virus capsid (the Michelangelo blob). awake = violet with glowing eyes, else grey stone with closed eyes.
+function michGeo(awake) {
+  const body = awake ? C.mich : C.stone, dark = awake ? C.michDark : C.stoneDark, tip = awake ? C.michTip : C.stoneTip;
+  const P = [piece(PRIM.ico1, body, awake ? 0.35 : 0.02, [0, 0, 0], [0, 0, 0], [0.3, 0.27, 0.3])];
+  const dirs = [];
+  for (let k = 0; k < 8; k++) { const a = (k / 8) * TAU + 0.2; dirs.push([Math.sin(a), 0.15, Math.cos(a)]); }
+  for (let k = 0; k < 4; k++) { const a = (k / 4) * TAU + 0.6; dirs.push([Math.sin(a) * 0.6, 0.85, Math.cos(a) * 0.6]); }
+  dirs.push([0, 1, 0]);
+  for (const d of dirs) {
+    const L = Math.hypot(d[0], d[1], d[2]);
+    const u = [d[0] / L, d[1] / L, d[2] / L];
+    P.push(pieceDir(PRIM.cyl6, dark, awake ? 0.3 : 0, [u[0] * 0.32, u[1] * 0.29, u[2] * 0.32], u, [0.025, 0.14, 0.025]));
+    P.push(piece(PRIM.ico0, tip, awake ? 1.0 : 0.05, [u[0] * 0.4, u[1] * 0.37, u[2] * 0.4], [0, 0, 0], [0.05, 0.05, 0.05]));
+  }
+  for (const sx of [-1, 1]) {
+    if (awake) {
+      P.push(piece(PRIM.ico1, C.evil, 1.0, [sx * 0.11, 0.08, 0.25], [0, 0, 0], [0.07, 0.075, 0.05]));
+      P.push(piece(PRIM.box, C.black, 0, [sx * 0.11, 0.17, 0.26], [0, 0, sx * 0.45], [0.13, 0.03, 0.04]));
+    } else {
+      // closed, sleepy eyelids
+      P.push(piece(PRIM.box, C.ink, 0, [sx * 0.11, 0.06, 0.27], [0, 0, -sx * 0.12], [0.11, 0.022, 0.03]));
+    }
+  }
+  P.push(piece(PRIM.box, C.ink, 0, [0, -0.07, 0.275], [0.2, 0, 0], awake ? [0.14, 0.05, 0.03] : [0.06, 0.02, 0.03]));
+  return build(P);
+}
+
+// "Z" glyph in the XY plane (faces +Z), drawn tilted toward the camera above a sleeping Michelangelo.
+function zzGeo() {
+  return build([
+    piece(PRIM.box, C.zz, 0.9, [0, 0.1, 0], [0, 0, 0], [0.22, 0.045, 0.02]),
+    piece(PRIM.box, C.zz, 0.9, [0, -0.1, 0], [0, 0, 0], [0.22, 0.045, 0.02]),
+    piece(PRIM.box, C.zz, 0.9, [0, 0, 0], [0, 0, 0.74], [0.27, 0.045, 0.02]),
+  ]);
+}
+
+// HAPPY99: firework rocket pointing +Z on its stick.
+function rocketGeo() {
+  const X = Math.PI / 2;
+  const P = [
+    piece(PRIM.cyl8, C.rocket, 0.75, [0, 0, 0], [X, 0, 0], [0.14, 0.5, 0.14]),
+    piece(PRIM.cyl8, C.rocketRed, 0.8, [0, 0, 0.1], [X, 0, 0], [0.125, 0.06, 0.125]),
+    piece(PRIM.cyl8, C.rocketCyan, 0.8, [0, 0, -0.1], [X, 0, 0], [0.125, 0.06, 0.125]),
+    piece(PRIM.cone8, C.rocketRed, 0.6, [0, 0, 0.36], [X, 0, 0], [0.12, 0.22, 0.12]),
+    piece(PRIM.box, C.stick, 0, [0, -0.13, -0.38], [0, 0, 0], [0.025, 0.025, 0.62]),
+    piece(PRIM.ico0, C.spark, 1.0, [0, 0, -0.27], [0, 0, 0], [0.07, 0.07, 0.07]),
+  ];
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * TAU + Math.PI / 4;
+    P.push(piece(PRIM.box, C.rocketCyan, 0.6, [Math.sin(a) * 0.17, Math.cos(a) * 0.17, -0.2], [0, 0, -a], [0.02, 0.12, 0.14]));
+  }
+  // star sticker on the top (glows): reads as a firework from above
+  P.push(piece(PRIM.octa, C.spark, 1.0, [0, 0.125, 0.0], [0, 0, 0], [0.06, 0.02, 0.06]));
+  return build(P);
+}
+
+function sparksGeo() {
+  const cols = [C.rocketRed, C.rocketCyan, C.spark, C.rocketRed, C.rocketCyan, C.spark, C.rocketCyan];
+  const P = [];
+  for (let k = 0; k < cols.length; k++) {
+    const a = k * 2.4, r = 0.06 + (k % 3) * 0.05;
+    P.push(piece(PRIM.octa, cols[k], 1.0, [Math.sin(a) * r * 1.4, Math.cos(a) * r, -k * 0.04], [a, a * 0.5, 0], [0.05, 0.05, 0.05]));
+  }
+  return build(P);
+}
+
+// CIH: DIP BIOS chip on its pins with a glowing radioactive trefoil on top.
+function cihGeo() {
+  const P = [];
+  const top = 0.27;
+  P.push(piece(PRIM.box, C.chip, 0.02, [0, 0.2, 0], [0, 0, 0], [0.48, 0.14, 0.7]));
+  P.push(piece(PRIM.box, C.chipEdge, 0.05, [0, top + 0.002, 0], [0, 0, 0], [0.44, 0.004, 0.66]));
+  P.push(piece(PRIM.cyl8, C.chip, 0, [0, top + 0.004, 0.33], [0, 0, 0], [0.05, 0.008, 0.05])); // notch
+  for (let i = 0; i < 6; i++) {
+    const zz = -0.27 + i * 0.108;
+    for (const sx of [-1, 1]) {
+      P.push(piece(PRIM.box, C.metal, 0.08, [sx * 0.27, 0.21, zz], [0, 0, 0], [0.08, 0.025, 0.045]));
+      P.push(piece(PRIM.box, C.metal, 0.08, [sx * 0.305, 0.11, zz], [0, 0, 0], [0.022, 0.2, 0.045]));
+    }
+  }
+  const y0 = top + 0.004;
+  P.push(piece(PRIM.cyl8, C.hazard, 1.0, [0, y0 + 0.006, 0], [0, 0, 0], [0.035, 0.012, 0.035]));
+  for (let k = 0; k < 3; k++) {
+    const c = (k / 3) * TAU, half = Math.PI / 6;
+    const pts = [];
+    for (let j = 0; j <= 4; j++) { const a = c - half + (j / 4) * half * 2; pts.push([Math.sin(a) * 0.19, Math.cos(a) * 0.19]); }
+    for (let j = 4; j >= 0; j--) { const a = c - half + (j / 4) * half * 2; pts.push([Math.sin(a) * 0.06, Math.cos(a) * 0.06]); }
+    P.push(flat(pts, 0.012, C.hazard, 1.0, y0));
+  }
+  const ring = new THREE.TorusGeometry(0.235, 0.014, 3, 20);
+  P.push(piece(ring, C.hazard, 0.9, [0, y0 + 0.006, 0], [Math.PI / 2, 0, 0], [1, 1, 1]));
+  ring.dispose();
+  return build(P);
+}
+
+// Y2K.BUG: twin-bell alarm clock; the LED face is a separate textured batch (y2kFaceGeo) sharing the same matrix.
+const Y2K_FACE_Z = 0.231;
+function y2kBodyGeo() {
+  const P = [piece(PRIM.box, C.clock, 0.02, [0, 0, 0], [0, 0, 0], [1.5, 0.95, 0.45])];
+  // glowing amber frame around the face
+  P.push(piece(PRIM.box, C.clockRim, 0.9, [0, 0.43, Y2K_FACE_Z], [0, 0, 0], [1.42, 0.05, 0.03]));
+  P.push(piece(PRIM.box, C.clockRim, 0.9, [0, -0.43, Y2K_FACE_Z], [0, 0, 0], [1.42, 0.05, 0.03]));
+  for (const sx of [-1, 1]) {
+    P.push(piece(PRIM.box, C.clockRim, 0.9, [sx * 0.69, 0, Y2K_FACE_Z], [0, 0, 0], [0.05, 0.9, 0.03]));
+    // bells + legs
+    P.push(piece(PRIM.ico1, C.bell, 0.35, [sx * 0.52, 0.6, -0.02], [0, 0, sx * 0.4], [0.26, 0.2, 0.26]));
+    P.push(piece(PRIM.cyl6, C.metal, 0.05, [sx * 0.5, -0.56, 0], [0, 0, sx * 0.3], [0.05, 0.2, 0.05]));
+  }
+  P.push(piece(PRIM.box, C.metal, 0.1, [0, 0.66, -0.02], [0, 0, 0], [0.05, 0.22, 0.05]));
+  P.push(piece(PRIM.box, C.metal, 0.1, [0, 0.77, -0.02], [0, 0, 0], [0.32, 0.05, 0.05]));
+  return build(P);
+}
+function y2kFaceGeo() {
+  const g = new THREE.PlaneGeometry(1.3, 0.78);
+  g.translate(0, 0, Y2K_FACE_Z + 0.006);
+  return g;
+}
+function clockTexture(time, date, color) {
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 300;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#080203';
+  g.fillRect(0, 0, 512, 300);
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.shadowColor = color;
+  g.shadowBlur = 22;
+  g.fillStyle = color;
+  g.font = 'bold 150px "Courier New", Consolas, monospace';
+  g.fillText(time, 256, 108);
+  g.font = 'bold 74px "Courier New", Consolas, monospace';
+  g.fillText(date, 256, 236);
+  g.shadowBlur = 0;
+  g.globalAlpha = 0.35;
+  g.fillStyle = '#ffffff';
+  g.font = 'bold 150px "Courier New", Consolas, monospace';
+  g.fillText(time, 256, 108);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
 
 function wormHeadGeo() {
   const P = [];
@@ -564,7 +728,23 @@ export function createEnemyModels(ctx) {
     heart: makeBatch(root, heartGeo(), mat, 4),
     envelope: makeBatch(root, envelopeGeo(), mat, 4),
     frost: makeBatch(root, frostGeo(), mat, 240),
+    michSleep: makeBatch(root, michGeo(false), mat, 32),
+    michAwake: makeBatch(root, michGeo(true), mat, 32),
+    zz: makeBatch(root, zzGeo(), mat, 64, { shadow: false }),
+    rocket: makeBatch(root, rocketGeo(), mat, 48),
+    sparks: makeBatch(root, sparksGeo(), mat, 48, { shadow: false }),
+    cih: makeBatch(root, cihGeo(), mat, 32),
+    y2k: makeBatch(root, y2kBodyGeo(), mat, 4),
   };
+  // Y2K LED faces (CanvasTexture, generated in code): 23:59 1999, and the rollover 00:00 1900
+  const faces = {};
+  try {
+    for (const [k, tm, dt, col] of [['f1999', '23:59', '31.12.1999', '#ffae2a'], ['f1900', '00:00', '01.01.1900', '#ff3a1f']]) {
+      const fm = new THREE.MeshBasicMaterial({ map: clockTexture(tm, dt, col), toneMapped: false });
+      fm.color.setScalar(1.35);
+      faces[k] = makeBatch(root, y2kFaceGeo(), fm, 4, { shadow: false, fx: false });
+    }
+  } catch (err) { /* no canvas: clock without a face */ }
   const blobMat = new THREE.ShaderMaterial({
     vertexShader: BLOB_VERT, fragmentShader: BLOB_FRAG, transparent: true, depthWrite: false,
     uniforms: { uOpacity: { value: 0.42 } },
@@ -588,10 +768,11 @@ export function createEnemyModels(ctx) {
   const labelDefs = {
     melissa: { text: 'MELISSA.DOC', color: '#7fb2ff', glow: '#3d7bff', h: 2.55 },
     iloveyou: { text: 'ILOVEYOU.VBS', color: '#ff7ab8', glow: '#ff3c8e', h: 2.9 },
+    y2k: { text: 'Y2K.BUG', color: '#ffb347', glow: '#ff3b1f', h: 2.9 },
   };
-  const labelPool = { melissa: [], iloveyou: [] };
+  const labelPool = { melissa: [], iloveyou: [], y2k: [] };
   const labelMats = {};
-  const labelUsed = { melissa: 0, iloveyou: 0 };
+  const labelUsed = { melissa: 0, iloveyou: 0, y2k: 0 };
   function label(kind, x, y, z, alpha, t) {
     const d = labelDefs[kind];
     if (!d) return;
@@ -691,14 +872,14 @@ export function createEnemyModels(ctx) {
 
   // -------------------------------------------------------------------------------------------
   function begin() {
-    labelUsed.melissa = 0;
-    labelUsed.iloveyou = 0;
+    for (const k in labelUsed) labelUsed[k] = 0;
   }
 
   function end() {
     const sm = ctx.view && ctx.view.renderer && ctx.view.renderer.shadowMap;
     blobMat.uniforms.uOpacity.value = sm && sm.enabled ? 0.26 : 0.42;
     for (const k in B) flush(B[k]);
+    for (const k in faces) flush(faces[k]);
     flush(blob);
     if (halo) flush(halo);
     flush(bars);
@@ -771,6 +952,10 @@ export function createEnemyModels(ctx) {
       case 'macro_mini': drawPage(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
       case 'melissa': drawMelissa(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
       case 'iloveyou': drawLove(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
+      case 'michelangelo': drawMich(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
+      case 'happy99': drawRocket(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
+      case 'cih': drawCih(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
+      case 'y2k': drawY2k(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t); break;
       default: drawPage(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t);
     }
 
@@ -924,8 +1109,71 @@ export function createEnemyModels(ctx) {
     if (v.mode === 0) label('iloveyou', x, ((e.def.barY || 1.85) + 0.6) * s + y, z, Math.min(1, v.spawnT / SPAWN_TIME), t);
   }
 
+  function drawMich(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t) {
+    if (!e.dormant) {
+      // awake: hops fast, leaning into the run, glowing (v.pulse = the wake-up burst)
+      const ph = e.dist * 5 + v.seed * TAU;
+      const hop = Math.abs(Math.sin(ph)) * 0.12 * s;
+      const k = s * (1 + v.pulse * 0.18);
+      trsE(_m, x, y + 0.4 * s + hop, z, 0.25, yaw + Math.sin(t * 9) * 0.08, Math.sin(ph) * 0.12, k * sx, k * sy, k * sx);
+      put(B.michAwake, _m, flash, slow, boost + v.pulse * 1.4 + 0.25 + 0.2 * Math.sin(t * 14 + v.seed * 9), 0);
+      return;
+    }
+    // dormant: slow breathing stone, rolling a little, with Zz rising above it
+    const br = 1 + Math.sin(t * 1.7 + v.seed * TAU) * 0.05;
+    trsE(_m, x, y + 0.37 * s, z, 0, yaw + Math.sin(t * 0.6 + v.seed * 5) * 0.1, Math.sin(e.dist * 3) * 0.06, s * sx * br, s * sy * (2 - br), s * sx * br);
+    put(B.michSleep, _m, flash, slow, boost + 0.15, 0.05);
+    if (v.mode !== 0) return;
+    for (let k = 0; k < 2; k++) {
+      const ph = (t * 0.45 + k * 0.5 + v.seed) % 1;
+      const zs = s * (0.45 + ph * 0.55) * Math.min(1, (1 - ph) * 4) * Math.min(1, ph * 6);
+      if (zs < 0.01) continue;
+      trsE(_m, x + (0.2 + ph * 0.3) * s, y + (0.95 + ph * 0.7) * s, z, -0.8, 0, -0.15 + Math.sin(t * 2 + k) * 0.1, zs, zs, zs);
+      put(B.zz, _m, 0, 0, 0, 0);
+    }
+  }
+
+  function drawRocket(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t) {
+    const ph = t * 4 + v.seed * TAU;
+    const bob = Math.sin(ph) * 0.05 * s;
+    trsE(_root, x, y + 0.45 * s + bob, z, -0.3 + Math.sin(ph * 0.7) * 0.06, yaw, Math.sin(t * 6 + v.seed * 3) * 0.25, s * sx, s * sy, s * sx);
+    put(B.rocket, _root, flash, slow, boost, 0);
+    if (v.mode === 2) return;
+    // fizzing sparkler at the tail (spins and flickers)
+    const fl = 0.75 + hash(Math.floor(t * 30) + v.seed * 97) * 0.6;
+    trsE(_m2, 0, 0, -0.33, t * 7, t * 11 + v.seed * 5, t * 5, fl, fl, fl);
+    _m.multiplyMatrices(_root, _m2);
+    put(B.sparks, _m, 0, slow, boost + 0.4, 0);
+  }
+
+  function drawCih(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t) {
+    const d = e.dist;
+    const waddle = Math.sin(d * 6 + v.seed * 6);
+    const glow = 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(t * 4.5 + v.seed * 7));
+    trsE(_m, x, y + Math.abs(waddle) * 0.04 * s, z, 0, yaw, waddle * 0.07, s * sx, s * sy, s * sx);
+    put(B.cih, _m, flash, slow, boost + glow, 0);
+  }
+
+  function drawY2k(e, v, x, y, z, s, sx, sy, yaw, flash, slow, boost, t) {
+    // ticking alarm clock floating toward the CPU, face toward the player; rings (shakes) while v.pulse is up
+    const tick = Math.floor(t * 2) % 2 ? 0.03 : -0.03;
+    const ring = v.pulse > 0.05 ? Math.sin(t * 60) * 0.06 * Math.min(1, v.pulse) : 0;
+    const bob = Math.sin(t * 1.6) * 0.08;
+    const lean = Math.sin(yaw) * 0.3;
+    const k = s * (1 + v.pulse * 0.06);
+    trsE(_m, x, y + 1.0 * s + bob, z, -0.78 + Math.sin(t * 1.2) * 0.04, lean + ring, tick + ring, k * sx, k * sy, k * sx);
+    put(B.y2k, _m, flash, slow, boost + v.pulse * 0.8, 0);
+    // the date rolls over to 1900 once it is half broken; before that it glitches for a frame now and then
+    const glitch = hash(Math.floor(t * 9) + v.seed * 53) < 0.06;
+    const late = v.stage >= 2;
+    const face = (late ? !glitch : glitch) ? faces.f1900 : faces.f1999;
+    if (face && v.mode !== 2) put(face, _m);
+    if (v.mode === 0) label('y2k', x, ((e.def.barY || 2.2) + 0.6) * (s / (e.def.scale || 1)) + y, z, Math.min(1, v.spawnT / SPAWN_TIME), t);
+  }
+
   function reset() {
     for (const k in B) { B[k].n = 0; flush(B[k]); }
+    for (const k in faces) { faces[k].n = 0; flush(faces[k]); }
     blob.n = 0; flush(blob);
     if (halo) { halo.n = 0; flush(halo); }
     bars.n = 0; flush(bars);

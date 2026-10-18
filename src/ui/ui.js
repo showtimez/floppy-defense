@@ -181,6 +181,12 @@ export function createUI(ctx) {
       continueAnnounced = true;
       notify.banner([t('banner.endless')], { cls: 'info', dur: 2.6, prio: 2 });
     }
+    // Wave 11 opens the 1999 campaign: SCANDISK and FORMAT C: unlock (towers.js gates them on unlockWave).
+    if (next === 11 && game.mode === 'campaign') {
+      const tf = (key, en) => { const s = t(key); return s && s !== key ? s : en; };
+      notify.banner([tf('banner.disk2', 'INSERT DISK 2 OF 2 · 1999'),
+        tf('banner.disk2Sub', 'NEW FLOPPIES UNLOCKED: [4] SCANDISK · [5] FORMAT C:')], { cls: 'info', dur: 3.4, prio: 2 });
+    }
     // First sighting of a virus type (from wave 2): one short briefing per type, after the CLEARED banner.
     if (freshTypes.length && next >= 2) {
       setTimeout(() => {
@@ -270,6 +276,8 @@ export function createUI(ctx) {
       notify.error(t('err.memory'), t('err.memoryDetail', { name: t('tower.' + type), need, have: Math.floor(game.kb) }));
     } else if (reason === 'occupied') {
       notify.error(t('err.occupied'), '', { dur: 1.6 });
+    } else if (reason === 'locked') {
+      notify.error(t('err.locked'), t('err.lockedDetail', { name: t('tower.' + type), n: 11 }), { dur: 1.8 });
     } else {
       notify.error(t('err.invalid'), t('err.retry'), { dur: 1.8 });
     }

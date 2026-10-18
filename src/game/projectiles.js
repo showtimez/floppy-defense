@@ -1,6 +1,7 @@
 // Projectiles & weapon effects for the floppy turrets.
 //   kind 'bolt'  : ANTIVIRUS homing scan bolt (pooled, instanced core + additive trail, swept collision, pierce)
-//   kind 'burst' : FIREWALL ring of fire around the tower (instant area damage, optional burn DoT)
+//   kind 'burst' : FIREWALL ring of fire around the tower (instant area damage, optional burn DoT); FORMAT reuses it
+//                  with opts.ringMode 0.25 (purple-shifted fire) and opts.fxColor (extra ring / sparks)
 //   kind 'pulse' : DEFRAG pulse (area slow + optional damage) with a "data blocks" ring
 // Rings are one instanced ShaderMaterial mesh animated on the GPU from a spawn time (idea adapted from
 // ZelariFPS/src/render/fxParts.js createRings). Zero allocations per frame in steady state.
@@ -102,7 +103,9 @@ void main() {
     // scorching heat on the floor, brightest right behind the wall of fire
     float n = noise(vLocal * vR * 3.0 + vec2(vSeed * 9.0, -uTime * 3.0));
     a = (0.05 + 0.8 * smoothstep(0.6, 0.97, d)) * pow(fade, 1.2) * (0.75 + 0.45 * n) * smoothstep(1.0, 0.95, d);
-    col = mix(vec3(0.95, 0.16, 0.02), vec3(1.0, 0.5, 0.06), smoothstep(0.7, 1.0, d)) * vStyle.rgb;
+    col = mix(vec3(0.95, 0.16, 0.02), vec3(1.0, 0.5, 0.06), smoothstep(0.7, 1.0, d));
+    if (vStyle.a > 0.1) col = vec3(col.r * 0.75, col.g * 0.6, col.r + col.g * 0.5);   // FORMAT: purple
+    col *= vStyle.rgb;
   } else {
     // disk-map grid of blocks lighting up inside the pulse (Win9x defrag look)
     vec2 g = vLocal * vR / 0.2;
@@ -127,6 +130,7 @@ void main() {
     float heat = clamp(1.0 - y / max(top, 0.05), 0.0, 1.0);
     col = mix(vec3(0.9, 0.06, 0.01), vec3(1.0, 0.36, 0.02), smoothstep(0.1, 0.7, heat));
     col = mix(col, vec3(1.0, 0.8, 0.3), smoothstep(0.8, 1.0, heat) * 0.7);
+    if (vStyle.a > 0.1) col = vec3(col.r * 0.75, col.g * 0.6, col.r + col.g * 0.5);   // FORMAT: purple
     col *= vStyle.rgb * 1.15;
     a *= fade * (0.6 + 0.4 * fade);
   } else {
@@ -375,11 +379,12 @@ export function createProjectiles(ctx) {
     const pos = opts.from;
     if (!pos) return null;
     const radius = opts.splash || 2;
-    spawnRing(pos, radius, 0.46, 0, opts.color ?? 0xffffff);
+    // ringMode 0.25 = FORMAT: same fire wall, hue-shifted to purple in the shader
+    spawnRing(pos, radius, 0.46, opts.ringMode || 0, opts.color ?? 0xffffff);
     RING_OPTS.life = 0.38; RING_OPTS.width = 0.12;
-    ctx.fx?.ring?.(pos, radius, 0xff5a1f, RING_OPTS);
+    ctx.fx?.ring?.(pos, radius, opts.fxColor ?? 0xff5a1f, RING_OPTS);
     _v.copy(pos); _v.y = 0.45;
-    ctx.fx?.burst?.(_v, 0xff7a1a, 12, BURST_OPTS);
+    ctx.fx?.burst?.(_v, opts.fxColor ?? 0xff7a1a, 12, BURST_OPTS);
     _hitList.length = 0;
     ctx.enemies?.queryRadius?.(pos, radius, _hitList);
     const n = _hitList.length;

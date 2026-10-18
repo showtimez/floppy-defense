@@ -10,15 +10,22 @@ const SAVE_MARGIN = 40;      // KB: wait for a better option if it is at most th
 const OPENING = 3;           // first floppies are always antivirus (3 x 64 KB fits the 200 KB start)
 const EARLY_BIAS = 0.65;     // coverage of the last stretch of a path is worth this much less than the front
 const TYPES = ['antivirus', 'firewall', 'defrag'];
+// Late floppies (data/towers.js unlockWave 11): only considered once towers.isLocked() says they are open, so the
+// bot's choices in waves 1-10 are exactly the same as with the three base types.
+const LATE = ['scandisk', 'format'];
+const ALL = TYPES.concat(LATE);
+const LATE_SHARE = 0.2;      // aim: ~1 SCANDISK and ~1 FORMAT per 5 builds made after the unlock
 const FALLBACK = {
   antivirus: { cost: 64, range: 3.0 },
   firewall: { cost: 128, range: 2.0 },
   defrag: { cost: 96, range: 2.4 },
+  scandisk: { cost: 112, range: 4.4 },
+  format: { cost: 200, range: 2.0 },
 };
 // Rough value multipliers per floppy (AoE and slow are worth more than raw path coverage says).
-const EFFICACY = { antivirus: 1.0, firewall: 2.4, defrag: 1.5 };
+const EFFICACY = { antivirus: 1.0, firewall: 2.4, defrag: 1.5, scandisk: 1.1, format: 2.6 };
 const MIX = { antivirus: 0.45, firewall: 0.3, defrag: 0.25 };
-const SHORT = { antivirus: 'A', firewall: 'F', defrag: 'D' };
+const SHORT = { antivirus: 'A', firewall: 'F', defrag: 'D', scandisk: 'S', format: 'X' };
 
 export function startAutoplay(ctx) {
   if (ctx.autoplay) return ctx.autoplay;
@@ -46,6 +53,7 @@ export function startAutoplay(ctx) {
   let towerSig = '';
   let cooling = null;        // heat.active entry the bot is clicking down (until it is gone)
   const blacklist = new Set(); // slot ids the towers module refused (invalid)
+  let lateBuilds = 0;          // floppies built since the late types unlocked (any type)
 
   // ------------------------------------------------------------------------------------------
   // Data helpers (defensive: towers/map may be stubs)
@@ -87,11 +95,11 @@ export function startAutoplay(ctx) {
     weight = Float32Array.from(wts);
     coverage = new Map();
     const ranges = {};
-    for (const t of TYPES) ranges[t] = def(t).range;
+    for (const t of ALL) ranges[t] = def(t).range;
     for (const s of slots) {
       if (!s || !s.pos) continue;
       const entry = {};
-      for (const t of TYPES) {
+      for (const t of ALL) {
         const r2 = ranges[t] * ranges[t];
         const idx = [];
         for (let k = 0; k < samples; k++) {
@@ -170,6 +178,28 @@ export function startAutoplay(ctx) {
       out.push({ kind: 'build', type, slot: best, cost, value: (EFFICACY[type] * bestScore * mix) / cost });
     }
 
+    // Late floppies (wave 11+): SCANDISK on the slot with the longest coverage, FORMAT only where paths bunch up.
+    if (mode === 'normal') {
+      for (const type of LATE) {
+        if (lateLocked(type)) continue;
+        let best = null;
+        let bestScore = 0;
+        for (const s of slots) {
+          if (!s || s.tower || blacklist.has(s.id)) continue;
+          const sc = slotScore(s, type);
+          if (sc > bestScore) { bestScore = sc; best = s; }
+        }
+        if (!best) continue;
+        if (type === 'format' && bestScore < 2.6) continue;
+        let have = 0;
+        for (const t of towers) if (t.type === type) have++;
+        const share = have / Math.max(1, lateBuilds);
+        const mix = Math.max(0.3, Math.min(2.5, 1 + 5 * (LATE_SHARE - share)));
+        const cost = def(type).cost;
+        out.push({ kind: 'build', type, slot: best, cost, value: (EFFICACY[type] * bestScore * mix) / cost });
+      }
+    }
+
     for (const t of towers) {
       if (mode === 'greedy' && t.type !== 'antivirus') continue;
       const cost = upgradeCost(t);
@@ -181,6 +211,13 @@ export function startAutoplay(ctx) {
     }
     out.sort((a, b) => b.value - a.value);
     return out;
+  }
+
+  function lateLocked(type) {
+    try {
+      if (typeof ctx.towers.isLocked === 'function') return !!ctx.towers.isLocked(type);
+    } catch (err) { /* stub */ }
+    return (game.wave | 0) < 10;
   }
 
   function choose() {
@@ -200,11 +237,12 @@ export function startAutoplay(ctx) {
       let check = { ok: true };
       try { check = ctx.towers.canPlace(c.type, c.slot) || { ok: false, reason: 'invalid' }; } catch (err) { check = { ok: false, reason: 'invalid' }; }
       if (!check.ok) {
-        if (check.reason !== 'kb') blacklist.add(c.slot.id);
+        if (check.reason !== 'kb' && check.reason !== 'locked') blacklist.add(c.slot.id);
         return false;
       }
       events.emit('cmd:build', { type: c.type, slotId: c.slot.id });
       if (!c.slot.tower) { blacklist.add(c.slot.id); return false; }
+      if (!lateLocked(LATE[0])) lateBuilds++;
       return true;
     }
     const before = c.tower.level;
@@ -254,10 +292,12 @@ export function startAutoplay(ctx) {
   // ------------------------------------------------------------------------------------------
   function towerSummary() {
     const towers = ctx.towers.list || [];
-    const c = { antivirus: 0, firewall: 0, defrag: 0 };
+    const c = { antivirus: 0, firewall: 0, defrag: 0, scandisk: 0, format: 0 };
     let levels = 0;
     for (const t of towers) { if (c[t.type] !== undefined) c[t.type]++; levels += t.level || 1; }
-    return { count: towers.length, mix: TYPES.map((t) => `${SHORT[t]}${c[t]}`).join(' '), levels };
+    // late types only appear in the mix once built (wave 1-10 logs stay identical)
+    const shown = TYPES.concat(LATE.filter((t) => c[t] > 0));
+    return { count: towers.length, mix: shown.map((t) => `${SHORT[t]}${c[t]}`).join(' '), levels };
   }
 
   function record(extra = {}) {

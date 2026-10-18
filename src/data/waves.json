@@ -1,5 +1,5 @@
 {
-  "_notes": "Campaign waves. Group fields: type, count, interval (s between spawns), delay (s from wave start), path (0 | 1 | 'alt' = alternate per spawn | 'both' = one per path per spawn, so count is PER PATH), optional hpMul / speedMul / rewardMul. Wave fields: bonus (KB on clear), optional hpMul / rewardMul. Waves > 10 are generated in waves.js (endless).",
+  "_notes": "Campaign waves. Group fields: type, count, interval (s between spawns), delay (s from wave start), path (0 | 1 | 'alt' = alternate per spawn | 'both' = one per path per spawn, so count is PER PATH), optional hpMul / speedMul / rewardMul. Wave fields: bonus (KB on clear), optional hpMul / rewardMul. Waves 11-20 are the 1999 campaign (new viruses; SCANDISK and FORMAT unlock at wave 11). Waves > 20 are generated in waves.js (endless).",
   "waves": [
     {
       "name": "HELLO.WORLD",
@@ -104,6 +104,119 @@
         {"type": "boss_iloveyou", "count": 1, "interval": 1, "delay": 10, "path": 0, "hpMul": 0.62},
         {"type": "macro", "count": 8, "interval": 1.0, "delay": 20, "path": "both"},
         {"type": "trojan", "count": 4, "interval": 2.0, "delay": 32, "path": "both"}
+      ]
+    },
+    {
+      "name": "MARCH 6",
+      "bonus": 64,
+      "hpMul": 6.75,
+      "groups": [
+        {"type": "worm", "count": 14, "interval": 0.35, "delay": 0, "path": "both"},
+        {"type": "michelangelo", "count": 6, "interval": 1.6, "delay": 5, "path": "alt"},
+        {"type": "macro", "count": 6, "interval": 1.0, "delay": 14, "path": "both"},
+        {"type": "michelangelo", "count": 4, "interval": 1.2, "delay": 24, "path": 1}
+      ]
+    },
+    {
+      "name": "HAPPY99",
+      "bonus": 68,
+      "hpMul": 7.55,
+      "groups": [
+        {"type": "happy99", "count": 8, "interval": 1.1, "delay": 0, "path": "alt"},
+        {"type": "trojan", "count": 4, "interval": 2.2, "delay": 6, "path": "both"},
+        {"type": "michelangelo", "count": 5, "interval": 1.3, "delay": 14, "path": "alt"},
+        {"type": "happy99", "count": 6, "interval": 0.9, "delay": 24, "path": "both"}
+      ]
+    },
+    {
+      "name": "CHERNOBYL",
+      "bonus": 72,
+      "hpMul": 8.1,
+      "groups": [
+        {"type": "worm", "count": 16, "interval": 0.3, "delay": 0, "path": "both", "speedMul": 1.2},
+        {"type": "cih", "count": 3, "interval": 3.0, "delay": 6, "path": 0},
+        {"type": "macro", "count": 8, "interval": 0.9, "delay": 14, "path": "alt"},
+        {"type": "cih", "count": 2, "interval": 3.0, "delay": 24, "path": 1}
+      ]
+    },
+    {
+      "name": "BOOT SECTOR",
+      "bonus": 76,
+      "hpMul": 9.2,
+      "groups": [
+        {"type": "michelangelo", "count": 6, "interval": 0.9, "delay": 0, "path": "both"},
+        {"type": "trojan", "count": 5, "interval": 1.8, "delay": 8, "path": "alt"},
+        {"type": "happy99", "count": 8, "interval": 0.8, "delay": 16, "path": "both"},
+        {"type": "cih", "count": 3, "interval": 2.5, "delay": 26, "path": "alt"}
+      ]
+    },
+    {
+      "name": "MAILBOMB",
+      "bonus": 90,
+      "hpMul": 4.2,
+      "groups": [
+        {"type": "worm", "count": 14, "interval": 0.35, "delay": 0, "path": "both"},
+        {"type": "boss_melissa", "count": 1, "interval": 1, "delay": 6, "path": 1, "hpMul": 1.5},
+        {"type": "happy99", "count": 6, "interval": 1.0, "delay": 14, "path": "alt"},
+        {"type": "boss_iloveyou", "count": 1, "interval": 1, "delay": 22, "path": 0, "hpMul": 0.62},
+        {"type": "cih", "count": 4, "interval": 2.5, "delay": 30, "path": "both"}
+      ]
+    },
+    {
+      "name": "DLL HELL",
+      "bonus": 80,
+      "hpMul": 10.8,
+      "groups": [
+        {"type": "macro", "count": 10, "interval": 0.7, "delay": 0, "path": "both"},
+        {"type": "michelangelo", "count": 8, "interval": 0.9, "delay": 8, "path": "alt"},
+        {"type": "trojan", "count": 6, "interval": 1.5, "delay": 16, "path": "both"},
+        {"type": "happy99", "count": 10, "interval": 0.6, "delay": 26, "path": "alt"}
+      ]
+    },
+    {
+      "name": "FLASH BIOS",
+      "bonus": 84,
+      "hpMul": 11.9,
+      "groups": [
+        {"type": "cih", "count": 5, "interval": 2.0, "delay": 0, "path": "both"},
+        {"type": "worm", "count": 24, "interval": 0.22, "delay": 6, "path": "alt", "speedMul": 1.3},
+        {"type": "michelangelo", "count": 8, "interval": 0.8, "delay": 16, "path": "both"},
+        {"type": "cih", "count": 4, "interval": 2.0, "delay": 28, "path": "alt"}
+      ]
+    },
+    {
+      "name": "PARTY LIKE 1999",
+      "bonus": 88,
+      "hpMul": 13.0,
+      "groups": [
+        {"type": "happy99", "count": 12, "interval": 0.6, "delay": 0, "path": "both"},
+        {"type": "trojan", "count": 8, "interval": 1.4, "delay": 8, "path": "alt"},
+        {"type": "macro", "count": 12, "interval": 0.6, "delay": 16, "path": "both"},
+        {"type": "michelangelo", "count": 10, "interval": 0.7, "delay": 26, "path": "alt"}
+      ]
+    },
+    {
+      "name": "23:59:59",
+      "bonus": 92,
+      "hpMul": 12.5,
+      "groups": [
+        {"type": "worm", "count": 20, "interval": 0.25, "delay": 0, "path": "both", "speedMul": 1.3},
+        {"type": "cih", "count": 6, "interval": 1.6, "delay": 6, "path": "both"},
+        {"type": "happy99", "count": 10, "interval": 0.7, "delay": 16, "path": "alt"},
+        {"type": "michelangelo", "count": 8, "interval": 0.8, "delay": 24, "path": "alt"},
+        {"type": "trojan", "count": 6, "interval": 1.4, "delay": 34, "path": "alt"}
+      ]
+    },
+    {
+      "name": "Y2K.BUG",
+      "bonus": 100,
+      "hpMul": 5.0,
+      "groups": [
+        {"type": "worm", "count": 16, "interval": 0.3, "delay": 0, "path": "both"},
+        {"type": "cih", "count": 4, "interval": 2.0, "delay": 6, "path": "alt"},
+        {"type": "boss_y2k", "count": 1, "interval": 1, "delay": 12, "path": 0, "hpMul": 0.36},
+        {"type": "michelangelo", "count": 8, "interval": 1.0, "delay": 22, "path": "both"},
+        {"type": "happy99", "count": 8, "interval": 1.0, "delay": 34, "path": "both"}
       ]
     }
   ]

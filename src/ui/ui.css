@@ -514,8 +514,8 @@
   flex-direction: column;
   align-items: center;
   gap: 0.12em;
-  width: 9.4em;
-  padding: 0.45em 0.35em 0.4em;
+  width: 7.7em;   /* five cards in one row: fits 960x600 and 844x390 */
+  padding: 0.45em 0.3em 0.4em;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid var(--tc);
   border-color: color-mix(in srgb, var(--tc) 55%, transparent);
@@ -542,6 +542,11 @@
 .fd-ui .card.is-poor .spr-card { filter: grayscale(0.85) brightness(0.7); }
 .fd-ui .card.is-poor .card-cost { color: var(--red); text-shadow: 0 0 6px rgba(255, 59, 48, 0.7); }
 .fd-ui .card.is-poor:hover { box-shadow: none; background: rgba(40, 0, 0, 0.6); border-color: var(--red); }
+.fd-ui .card.is-locked { opacity: 0.45; cursor: not-allowed; }
+.fd-ui .card.is-locked .spr-card { filter: grayscale(1) brightness(0.6); }
+.fd-ui .card.is-locked .card-vs { color: var(--g-dim); text-shadow: none; }
+.fd-ui .card.is-locked:hover { box-shadow: none; background: rgba(0, 0, 0, 0.55); border-color: var(--g-dim); }
+.fd-ui .card.is-locked:hover .spr-card { animation: none; }
 .fd-ui.touch .card-key, .fd-ui.touch .act-key { display: none; }
 
 .fd-ui .pop-tower { width: 16em; --tc: var(--g); }

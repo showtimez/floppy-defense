@@ -2,13 +2,35 @@
 // (falls back to the CONTRACTS baseline numbers).
 import { PALETTE } from '../config.js';
 
-export const TOWER_TYPES = ['antivirus', 'firewall', 'defrag'];
+export const TOWER_TYPES = ['antivirus', 'firewall', 'defrag', 'scandisk', 'format'];
+// body colours of the late floppies (not in config PALETTE)
+const EXTRA_COLOR = { scandisk: 0x2fd36a, format: 0xa35cff };
+// first wave each late floppy can be built in (mirrors data/towers.js unlockWave)
+const UNLOCK_WAVE = { scandisk: 11, format: 11 };
 
 const FALLBACK = {
   antivirus: { cost: 64, range: 3.0, damage: 12, rate: 1.6, color: PALETTE.antivirus },
   firewall: { cost: 128, range: 2.0, damage: 16, rate: 0.8, color: PALETTE.firewall },
   defrag: { cost: 96, range: 2.4, damage: 0, rate: 1 / 0.6, slow: 0.5, color: PALETTE.defrag },
+  scandisk: { cost: 112, range: 4.4, damage: 34, rate: 0.55, color: EXTRA_COLOR.scandisk, unlockWave: 11 },
+  format: { cost: 200, range: 2.0, damage: 70, rate: 0.3, color: EXTRA_COLOR.format, unlockWave: 11 },
 };
+
+// unlock wave of a floppy type (0 = always available)
+export function towerUnlockWave(U, type) {
+  const d = towerDef(U, type, 1);
+  return (d?.unlockWave ?? UNLOCK_WAVE[type] ?? 0) | 0;
+}
+
+// true while the floppy cannot be built yet (towers.isLocked when available, same rule otherwise)
+export function towerLocked(U, type) {
+  try {
+    const fn = U.ctx.towers?.isLocked;
+    if (typeof fn === 'function') return !!fn(type);
+  } catch (e) { /* stub */ }
+  const w = towerUnlockWave(U, type);
+  return w > 1 && ((U.game?.wave ?? U.ctx?.game?.wave) | 0) < w - 1;
+}
 
 const css = (n) => '#' + (n >>> 0).toString(16).padStart(6, '0');
 
@@ -34,7 +56,7 @@ function mixWhite(c, k) {
 
 // color: three.js hex; css: same as CSS; light: tint readable as text on black.
 export function towerLook(type) {
-  const color = PALETTE[type] ?? PALETTE.phosphor;
+  const color = PALETTE[type] ?? EXTRA_COLOR[type] ?? PALETTE.phosphor;
   return { color, css: css(color), light: css(mixWhite(color, 0.4)) };
 }
 
